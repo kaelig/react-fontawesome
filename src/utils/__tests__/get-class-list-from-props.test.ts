@@ -5,6 +5,7 @@ import {
   SizeProp,
 } from '@fortawesome/fontawesome-svg-core'
 
+import { DEFAULT_ICON_PROPS } from '../../components/__fixtures__/default-icon-props'
 import { FontAwesomeIconProps } from '../../types/icon-props'
 import { IS_VERSION_7_OR_LATER } from '../constants'
 import * as constants from '../constants'
@@ -220,9 +221,130 @@ describe('get class list', () => {
     afterEach(resetPrefixConfig)
   })
 
+  describe('class order and className tokens', () => {
+    test('classes follow a fixed order across categories', () => {
+      const classList = getClassListFromProps({
+        className: 'a b',
+        wag: true,
+        rotateBy: true,
+        swapOpacity: true,
+        pull: 'left',
+        rotation: 90,
+        size: 'lg',
+        flip: 'both',
+        fixedWidth: true,
+        beat: true,
+      } as FontAwesomeIconProps)
+
+      expect(classList).toStrictEqual([
+        'a',
+        'b',
+        'fa-beat',
+        'fa-fw',
+        'fa-flip-horizontal',
+        'fa-flip-vertical',
+        'fa-lg',
+        'fa-rotate-90',
+        'fa-pull-left',
+        'fa-swap-opacity',
+        ...(IS_VERSION_7_OR_LATER ? ['fa-rotate-by', 'fa-wag'] : []),
+      ])
+    })
+
+    test.each([
+      ['a  b', ['a', '', 'b']],
+      ['a ', ['a', '']],
+    ])('className %j keeps empty tokens', (className, expected) => {
+      expect(
+        getClassListFromProps({ className } as FontAwesomeIconProps),
+      ).toStrictEqual(expected)
+    })
+
+    test('the defaults FontAwesomeIcon merges in produce no classes', () => {
+      expect(
+        getClassListFromProps(
+          DEFAULT_ICON_PROPS as unknown as FontAwesomeIconProps,
+        ),
+      ).toStrictEqual([])
+    })
+
+    test('rotation 0 adds no rotate class', () => {
+      expect(
+        getClassListFromProps({
+          rotation: 0,
+        } as unknown as FontAwesomeIconProps),
+      ).toStrictEqual([])
+    })
+
+    test('flip false adds no flip classes', () => {
+      expect(
+        getClassListFromProps({ flip: false } as FontAwesomeIconProps),
+      ).toStrictEqual([])
+    })
+  })
+
+  describe('with a custom prefix rewriting className tokens', () => {
+    beforeEach(() => {
+      config.cssPrefix = 'custom'
+    })
+
+    afterEach(resetPrefixConfig)
+
+    test('rewrites fa- classes and fa- className tokens', () => {
+      expect(
+        getClassListFromProps({
+          className: 'fa-foo bar',
+          spin: true,
+        } as FontAwesomeIconProps),
+      ).toStrictEqual(
+        IS_VERSION_7_OR_LATER
+          ? ['custom-foo', 'bar', 'custom-spin']
+          : ['fa-foo', 'bar', 'fa-spin'],
+      )
+    })
+
+    test('leaves tokens where fa- does not start a class', () => {
+      expect(
+        getClassListFromProps({
+          className: 'xfa-foo foo-fa-bar',
+        } as FontAwesomeIconProps),
+      ).toStrictEqual(['xfa-foo', 'foo-fa-bar'])
+    })
+
+    test('treats a tab inside a className token as a class boundary', () => {
+      expect(
+        getClassListFromProps({
+          className: 'a\tfa-b',
+        } as FontAwesomeIconProps),
+      ).toStrictEqual([IS_VERSION_7_OR_LATER ? 'a\tcustom-b' : 'a\tfa-b'])
+    })
+
+    test('uses the prefix configured at call time', () => {
+      const props = { spin: true } as FontAwesomeIconProps
+
+      config.cssPrefix = 'one'
+      const first = getClassListFromProps(props)
+      config.cssPrefix = 'two'
+      const second = getClassListFromProps(props)
+      config.cssPrefix = ''
+      const third = getClassListFromProps(props)
+
+      expect([first, second, third]).toStrictEqual(
+        IS_VERSION_7_OR_LATER
+          ? [['one-spin'], ['two-spin'], ['fa-spin']]
+          : [['fa-spin'], ['fa-spin'], ['fa-spin']],
+      )
+    })
+  })
+
   describe('when using fontawesome-svg-core pre-v7', () => {
     beforeEach(() => {
       jest.spyOn(constants, 'getIsVersion7OrLater').mockReturnValue(false)
+    })
+
+    afterEach(() => {
+      jest.restoreAllMocks()
+      resetPrefixConfig()
     })
 
     it('should not apply rotateBy or widthAuto classnames', () => {
