@@ -112,38 +112,36 @@ export const FontAwesomeIcon = React.forwardRef<
   // later changes the key from undefined to the new icon.
   const iconDefinition = resolveDefinition(iconLookup)
   const maskDefinition = resolveDefinition(maskLookup)
-  const abstract = useMemo(
-    () => {
-      if (!iconLookup) return null
-      const transformProps =
-        typeof transform === 'string' ? faParse.transform(transform) : transform
-      return faIcon(iconLookup, {
-        ...(classList.length > 0 && { classes: classList }),
-        ...(transformProps && { transform: transformProps }),
-        ...(maskLookup && { mask: maskLookup }),
-        symbol,
-        title,
-        titleId,
-        maskId,
-      })?.abstract
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on values, not on the lookup objects and class array rebuilt every render
-    [
-      iconDefinition?.prefix,
-      iconDefinition?.iconName,
-      iconDefinition?.icon,
-      maskDefinition?.prefix,
-      maskDefinition?.iconName,
-      maskDefinition?.icon,
-      classes,
-      transform,
+  /* eslint-disable react-hooks/exhaustive-deps -- keyed on values, not on the lookup objects and class array rebuilt every render */
+  const abstract = useMemo(() => {
+    if (!iconLookup) return null
+    const transformProps =
+      typeof transform === 'string' ? faParse.transform(transform) : transform
+    return faIcon(iconLookup, {
+      ...(classList.length > 0 && { classes: classList }),
+      ...(transformProps && { transform: transformProps }),
+      ...(maskLookup && { mask: maskLookup }),
       symbol,
       title,
       titleId,
       maskId,
-      ...CONFIG_KEYS.map((key) => faConfig[key]),
-    ],
-  )
+    })?.abstract
+  }, [
+    iconDefinition?.prefix,
+    iconDefinition?.iconName,
+    iconDefinition?.icon,
+    maskDefinition?.prefix,
+    maskDefinition?.iconName,
+    maskDefinition?.icon,
+    classes,
+    transform,
+    symbol,
+    title,
+    titleId,
+    maskId,
+    ...CONFIG_KEYS.map((key) => faConfig[key]),
+  ])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   if (!iconLookup) {
     logger.error('Icon lookup is undefined', iconArgs)
