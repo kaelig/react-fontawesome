@@ -660,20 +660,66 @@ describe('FontAwesomeIcon', () => {
   })
 
   describe('re-rendering', () => {
+    const defaultConfig = { ...fontawesome.config }
+
     afterEach(() => {
-      fontawesome.config.cssPrefix = 'fa'
+      Object.assign(fontawesome.config, defaultConfig)
     })
 
-    test('reuses the SVG description when props are unchanged', () => {
-      // Not restored: the `symbol` block below shares this spy, and
-      // clearMocks resets its calls before each test.
-      const spy = jest.spyOn(fontawesome, 'icon')
+    // Captured before the `symbol` block below replaces icon() with a spy.
+    const realIcon = fontawesome.icon
 
-      const { rerender } = render(<FontAwesomeIcon icon={faCoffee} spin />)
-      rerender(<FontAwesomeIcon icon={faCoffee} spin />)
-      rerender(<FontAwesomeIcon icon={faCoffee} spin />)
+    // Spies on icon() and counts reads of the first result's `abstract`
+    // getter, which rebuilds the SVG description on every read.
+    // The spy is not restored: the `symbol` block shares it, and clearMocks
+    // resets its calls before each test.
+    function spyOnDescriptionBuilds() {
+      const reads = { abstract: 0 }
+      const spy = jest
+        .spyOn(fontawesome, 'icon')
+        .mockImplementationOnce((...args) => {
+          const result = realIcon(...args)
+          return (
+            result && {
+              ...result,
+              get abstract() {
+                reads.abstract++
+                return result.abstract
+              },
+            }
+          )
+        })
+      return { spy, reads }
+    }
+
+    test.each<[string, fontawesome.IconProp]>([
+      ['an icon definition', faCoffee],
+      ['an icon name', 'coffee'],
+      ['a [prefix, name] array', ['fas', 'coffee']],
+    ])(
+      'builds the SVG description once for %s when props are unchanged',
+      (_, icon) => {
+        const { spy, reads } = spyOnDescriptionBuilds()
+
+        const { rerender } = render(<FontAwesomeIcon icon={icon} spin />)
+        rerender(<FontAwesomeIcon icon={icon} spin />)
+        rerender(<FontAwesomeIcon icon={icon} spin />)
+
+        expect(spy).toHaveBeenCalledTimes(1)
+        expect(reads.abstract).toBe(1)
+      },
+    )
+
+    test('builds the SVG description once for a named mask', () => {
+      const { spy, reads } = spyOnDescriptionBuilds()
+
+      const { rerender } = render(
+        <FontAwesomeIcon icon={faCoffee} mask="circle" />,
+      )
+      rerender(<FontAwesomeIcon icon={faCoffee} mask="circle" />)
 
       expect(spy).toHaveBeenCalledTimes(1)
+      expect(reads.abstract).toBe(1)
     })
 
     test('rebuilds the SVG description when a prop it uses changes', () => {
@@ -698,18 +744,40 @@ describe('FontAwesomeIcon', () => {
       )
     })
 
-    if (IS_VERSION_7_OR_LATER) {
-      test('picks up a cssPrefix change on the next render', () => {
-        const { rerender } = render(<FontAwesomeIcon icon={faCoffee} spin />)
+    test('picks up a cssPrefix change on the next render', () => {
+      const { rerender } = render(<FontAwesomeIcon icon={faCoffee} />)
 
-        fontawesome.config.cssPrefix = 'custom'
-        rerender(<FontAwesomeIcon icon={faCoffee} spin />)
+      fontawesome.config.cssPrefix = 'custom'
+      rerender(<FontAwesomeIcon icon={faCoffee} />)
 
-        expect(screen.getByRole('img', { hidden: true })).toHaveClass(
-          'custom-spin',
-        )
-      })
-    }
+      expect(screen.getByRole('img', { hidden: true })).toHaveClass(
+        'custom-coffee',
+      )
+    })
+
+    test('picks up a replacementClass change on the next render', () => {
+      const { rerender } = render(<FontAwesomeIcon icon={faCoffee} />)
+
+      fontawesome.config.replacementClass = 'custom-svg'
+      rerender(<FontAwesomeIcon icon={faCoffee} />)
+
+      expect(screen.getByRole('img', { hidden: true })).toHaveClass(
+        'custom-svg',
+      )
+    })
+
+    test('rebuilds the SVG description when autoAddCss changes', () => {
+      // svg-core injects its stylesheet while building the description, so a
+      // later switch to autoAddCss = true has to reach a rebuild.
+      const { spy } = spyOnDescriptionBuilds()
+
+      fontawesome.config.autoAddCss = false
+      const { rerender } = render(<FontAwesomeIcon icon={faCoffee} />)
+      fontawesome.config.autoAddCss = true
+      rerender(<FontAwesomeIcon icon={faCoffee} />)
+
+      expect(spy).toHaveBeenCalledTimes(2)
+    })
   })
 
   describe('default props', () => {

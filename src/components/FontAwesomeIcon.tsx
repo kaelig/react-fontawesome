@@ -61,6 +61,11 @@ const DEFAULT_PROPS = {
 
 const DEFAULT_PROP_KEYS = new Set(Object.keys(DEFAULT_PROPS))
 
+// Every svg-core config value can affect icon()'s output, and the set differs
+// between svg-core versions (v6 reads `autoA11y`), so the cache keys on all of
+// them rather than a hand-picked list.
+const CONFIG_KEYS = Object.keys(faConfig) as (keyof typeof faConfig)[]
+
 function resolveDefinition(lookup: ReturnType<typeof normalizeIconArgs>) {
   if (!lookup || 'icon' in lookup) return lookup
   return findIconDefinition(lookup)
@@ -98,21 +103,15 @@ export const FontAwesomeIcon = React.forwardRef<
   const classes = classList.join(' ')
 
   // Building the SVG description is most of an icon's render cost, so reuse
-  // it until something it depends on changes. That includes the definitions
-  // the icon and mask resolve to (a name lookup resolves once library.add()
-  // registers it) and the svg-core config values icon() reads. The result's
-  // `abstract` getter rebuilds the description on every read, so cache the
-  // description itself, not the result.
+  // it until something it depends on changes: the icon and mask it renders,
+  // the props passed to icon(), and svg-core's config. The result's `abstract`
+  // getter rebuilds the description on every read, so cache the description
+  // itself, not the result.
+  // findIconDefinition() returns a new object on every call, so the key uses
+  // the definition's contents. A name lookup that library.add() registers
+  // later changes the key from undefined to the new icon.
   const iconDefinition = resolveDefinition(iconLookup)
   const maskDefinition = resolveDefinition(maskLookup)
-  const {
-    cssPrefix,
-    familyPrefix,
-    replacementClass,
-    familyDefault,
-    styleDefault,
-    showMissingIcons,
-  } = faConfig
   const abstract = useMemo(
     () => {
       if (!iconLookup) return null
@@ -130,20 +129,19 @@ export const FontAwesomeIcon = React.forwardRef<
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on values, not on the lookup objects and class array rebuilt every render
     [
-      iconDefinition,
-      maskDefinition,
+      iconDefinition?.prefix,
+      iconDefinition?.iconName,
+      iconDefinition?.icon,
+      maskDefinition?.prefix,
+      maskDefinition?.iconName,
+      maskDefinition?.icon,
       classes,
       transform,
       symbol,
       title,
       titleId,
       maskId,
-      cssPrefix,
-      familyPrefix,
-      replacementClass,
-      familyDefault,
-      styleDefault,
-      showMissingIcons,
+      ...CONFIG_KEYS.map((key) => faConfig[key]),
     ],
   )
 
