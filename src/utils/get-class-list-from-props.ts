@@ -72,10 +72,10 @@ export function getClassListFromProps(props: FontAwesomeIconProps): string[] {
     className,
   } = props
 
-  const result: string[] = []
+  // className tokens come first, so start from them rather than copying them
+  const result = className ? className.split(' ') : []
 
   // Add classes only if the condition is truthy
-  if (className) result.push(...className.split(' '))
   if (beat) result.push(ANIMATION_CLASSES.beat)
   if (fade) result.push(ANIMATION_CLASSES.fade)
   if (beatFade) result.push(ANIMATION_CLASSES.beatFade)
