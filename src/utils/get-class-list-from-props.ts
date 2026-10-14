@@ -11,15 +11,21 @@ import {
 } from './constants'
 import { FontAwesomeIconProps } from '../types/icon-props'
 
+// Matches the default prefix at the start of each class in a class string,
+// capturing the preceding whitespace (if any) so it can be put back.
+// Built once rather than per call, and without lookbehind, which Safari only
+// supports from 16.4.
+const DEFAULT_PREFIX_PATTERN = new RegExp(
+  String.raw`(^|\s)${DEFAULT_CLASSNAME_PREFIX}-`,
+  'g',
+)
+
 export function withPrefix(cls: string): string {
   const prefix =
     config.cssPrefix || config.familyPrefix || DEFAULT_CLASSNAME_PREFIX
   return prefix === DEFAULT_CLASSNAME_PREFIX
     ? cls
-    : cls.replace(
-        new RegExp(String.raw`(?<=^|\s)${DEFAULT_CLASSNAME_PREFIX}-`, 'g'),
-        `${prefix}-`,
-      )
+    : cls.replace(DEFAULT_PREFIX_PATTERN, `$1${prefix}-`)
 }
 
 /**
