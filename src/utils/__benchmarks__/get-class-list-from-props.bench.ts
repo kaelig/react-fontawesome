@@ -216,11 +216,6 @@ const runBatch = (inputs: FontAwesomeIconProps[], calls: number) => {
   }
 }
 
-const median = (values: number[]) => {
-  const sorted = values.toSorted((a, b) => a - b)
-  return sorted[Math.floor(sorted.length / 2)]
-}
-
 const measure = ({ name, inputs }: Scenario): Result => {
   // Warm up, and size batches so each sample takes about SAMPLE_MS.
   let calls = 0
@@ -241,8 +236,8 @@ const measure = ({ name, inputs }: Scenario): Result => {
     samples.push(((performance.now() - start) * 1e6) / callsPerSample)
   }
 
-  const medianNs = median(samples)
   const sorted = samples.toSorted((a, b) => a - b)
+  const medianNs = sorted[Math.floor(sorted.length / 2)]
   const p10 = sorted[Math.floor(sorted.length * 0.1)]
   const p90 = sorted[Math.floor(sorted.length * 0.9)]
 

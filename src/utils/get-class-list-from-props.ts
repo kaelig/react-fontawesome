@@ -128,13 +128,11 @@ export function getClassListFromProps(props: FontAwesomeIconProps): string[] {
   if (swing) result.push(ANIMATION_CLASSES.swing)
   if (wag) result.push(ANIMATION_CLASSES.wag)
 
-  const prefix = getPrefix()
-  if (prefix === DEFAULT_CLASSNAME_PREFIX || result.length === 0) return result
+  if (getPrefix() === DEFAULT_CLASSNAME_PREFIX || result.length === 0) {
+    return result
+  }
 
-  // No class contains a space (className was split on them), so rewriting the
-  // joined list in one pass is the same as rewriting each class.
-  return result
-    .join(' ')
-    .replace(DEFAULT_PREFIX_PATTERN, `$1${prefix}-`)
-    .split(' ')
+  // No class contains a space (className was split on them), so prefixing the
+  // joined list in one pass is the same as prefixing each class.
+  return withPrefix(result.join(' ')).split(' ')
 }
