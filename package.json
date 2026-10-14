@@ -64,6 +64,7 @@
     "format:staged": "pretty-quick --pattern src/** --staged",
     "prepack": "npm run build",
     "test": "jest",
+    "bench": "jest --config jest.bench.config.ts --runInBand",
     "test:watch": "jest --watch",
     "test:prepublish": "npm run install.6 && npm run test && npm run install.7 && npm run test",
     "serve:coverage": "serve ./coverage/lcov-report",

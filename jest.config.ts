@@ -28,6 +28,7 @@ const config: Config = {
     'src/global.d.ts',
     'src/index.ts',
     'src/components/__fixtures__',
+    '__benchmarks__',
     'src/types',
   ],
 
