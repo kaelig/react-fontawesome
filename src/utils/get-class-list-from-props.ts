@@ -129,8 +129,12 @@ export function getClassListFromProps(props: FontAwesomeIconProps): string[] {
   if (wag) result.push(ANIMATION_CLASSES.wag)
 
   const prefix = getPrefix()
-  if (prefix === DEFAULT_CLASSNAME_PREFIX) return result
+  if (prefix === DEFAULT_CLASSNAME_PREFIX || result.length === 0) return result
 
-  const replacement = `$1${prefix}-`
-  return result.map((cls) => cls.replace(DEFAULT_PREFIX_PATTERN, replacement))
+  // No class contains a space (className was split on them), so rewriting the
+  // joined list in one pass is the same as rewriting each class.
+  return result
+    .join(' ')
+    .replace(DEFAULT_PREFIX_PATTERN, `$1${prefix}-`)
+    .split(' ')
 }
