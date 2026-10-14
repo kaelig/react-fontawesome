@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import {
+  config as faConfig,
+  findIconDefinition,
   icon as faIcon,
   parse as faParse,
 } from '@fortawesome/fontawesome-svg-core'
@@ -59,6 +61,16 @@ const DEFAULT_PROPS = {
 
 const DEFAULT_PROP_KEYS = new Set(Object.keys(DEFAULT_PROPS))
 
+// Every svg-core config value can affect icon()'s output, and the set differs
+// between svg-core versions (v6 reads `autoA11y`), so the cache keys on all of
+// them rather than a hand-picked list.
+const CONFIG_KEYS = Object.keys(faConfig) as (keyof typeof faConfig)[]
+
+function resolveDefinition(lookup: ReturnType<typeof normalizeIconArgs>) {
+  if (!lookup || 'icon' in lookup) return lookup
+  return findIconDefinition(lookup)
+}
+
 /**
  * React Component for rendering Font Awesome icons.
  *
@@ -86,35 +98,61 @@ export const FontAwesomeIcon = React.forwardRef<
   const titleId = useAccessibilityId(titleIdFromProps, Boolean(title))
 
   const iconLookup = normalizeIconArgs(iconArgs)
+  const maskLookup = normalizeIconArgs(maskArgs)
+  const classList = getClassListFromProps(allProps)
+  const classes = classList.join(' ')
+
+  // Building the SVG description is most of an icon's render cost, so reuse
+  // it until something it depends on changes: the icon and mask it renders,
+  // the props passed to icon(), and svg-core's config. The result's `abstract`
+  // getter rebuilds the description on every read, so cache the description
+  // itself, not the result.
+  // findIconDefinition() returns a new object on every call, so the key uses
+  // the definition's contents. A name lookup that library.add() registers
+  // later changes the key from undefined to the new icon.
+  const iconDefinition = resolveDefinition(iconLookup)
+  const maskDefinition = resolveDefinition(maskLookup)
+  /* eslint-disable react-hooks/exhaustive-deps -- keyed on values, not on the lookup objects and class array rebuilt every render */
+  const abstract = useMemo(() => {
+    if (!iconLookup) return null
+    const transformProps =
+      typeof transform === 'string' ? faParse.transform(transform) : transform
+    return faIcon(iconLookup, {
+      ...(classList.length > 0 && { classes: classList }),
+      ...(transformProps && { transform: transformProps }),
+      ...(maskLookup && { mask: maskLookup }),
+      symbol,
+      title,
+      titleId,
+      maskId,
+    })?.abstract
+  }, [
+    iconDefinition?.prefix,
+    iconDefinition?.iconName,
+    iconDefinition?.icon,
+    maskDefinition?.prefix,
+    maskDefinition?.iconName,
+    maskDefinition?.icon,
+    classes,
+    transform,
+    symbol,
+    title,
+    titleId,
+    maskId,
+    ...CONFIG_KEYS.map((key) => faConfig[key]),
+  ])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   if (!iconLookup) {
     logger.error('Icon lookup is undefined', iconArgs)
     return null
   }
 
-  const classList = getClassListFromProps(allProps)
-
-  const transformProps =
-    typeof transform === 'string' ? faParse.transform(transform) : transform
-
-  const normalizedMaskArgs = normalizeIconArgs(maskArgs)
-
-  const renderedIcon = faIcon(iconLookup, {
-    ...(classList.length > 0 && { classes: classList }),
-    ...(transformProps && { transform: transformProps }),
-    ...(normalizedMaskArgs && { mask: normalizedMaskArgs }),
-    symbol,
-    title,
-    titleId,
-    maskId,
-  })
-
-  if (!renderedIcon) {
+  if (!abstract) {
     logger.error('Could not find icon', iconLookup)
     return null
   }
 
-  const { abstract } = renderedIcon
   const extraProps: Omit<
     React.SVGAttributes<SVGSVGElement>,
     'children' | 'mask' | 'transform'
