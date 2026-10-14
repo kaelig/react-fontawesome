@@ -11,15 +11,23 @@ import {
 } from './constants'
 import { FontAwesomeIconProps } from '../types/icon-props'
 
+// Matches the default prefix at the start of each class in a class string,
+// capturing the preceding whitespace (if any) so it can be put back.
+// Built once rather than per call, and without lookbehind, which Safari only
+// supports from 16.4.
+const DEFAULT_PREFIX_PATTERN = new RegExp(
+  String.raw`(^|\s)${DEFAULT_CLASSNAME_PREFIX}-`,
+  'g',
+)
+
+const getPrefix = () =>
+  config.cssPrefix || config.familyPrefix || DEFAULT_CLASSNAME_PREFIX
+
 export function withPrefix(cls: string): string {
-  const prefix =
-    config.cssPrefix || config.familyPrefix || DEFAULT_CLASSNAME_PREFIX
+  const prefix = getPrefix()
   return prefix === DEFAULT_CLASSNAME_PREFIX
     ? cls
-    : cls.replace(
-        new RegExp(String.raw`(?<=^|\s)${DEFAULT_CLASSNAME_PREFIX}-`, 'g'),
-        `${prefix}-`,
-      )
+    : cls.replace(DEFAULT_PREFIX_PATTERN, `$1${prefix}-`)
 }
 
 /**
@@ -64,10 +72,10 @@ export function getClassListFromProps(props: FontAwesomeIconProps): string[] {
     className,
   } = props
 
-  const result: string[] = []
+  // className tokens come first, so start from them rather than copying them
+  const result = className ? className.split(' ') : []
 
   // Add classes only if the condition is truthy
-  if (className) result.push(...className.split(' '))
   if (beat) result.push(ANIMATION_CLASSES.beat)
   if (fade) result.push(ANIMATION_CLASSES.fade)
   if (beatFade) result.push(ANIMATION_CLASSES.beatFade)
@@ -120,12 +128,11 @@ export function getClassListFromProps(props: FontAwesomeIconProps): string[] {
   if (swing) result.push(ANIMATION_CLASSES.swing)
   if (wag) result.push(ANIMATION_CLASSES.wag)
 
-  const prefix =
-    config.cssPrefix || config.familyPrefix || DEFAULT_CLASSNAME_PREFIX
+  if (getPrefix() === DEFAULT_CLASSNAME_PREFIX || result.length === 0) {
+    return result
+  }
 
-  return prefix === DEFAULT_CLASSNAME_PREFIX
-    ? result
-    : // TODO: see if we can achieve custom prefix support without iterating
-      // eslint-disable-next-line unicorn/no-array-callback-reference
-      result.map(withPrefix)
+  // No class contains a space (className was split on them), so prefixing the
+  // joined list in one pass is the same as prefixing each class.
+  return withPrefix(result.join(' ')).split(' ')
 }

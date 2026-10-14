@@ -6,6 +6,7 @@ The following commands are available through `npm run`
 
 | Command         | Purpose                                                        |
 | --------------- | -------------------------------------------------------------- |
+| bench           | Run performance benchmarks (see [Benchmarks](#benchmarks))     |
 | build           | Build this project with TSUP                                   |
 | format:check    | Check formatting of all files with Prettier                    |
 | format:fix      | Auto-fix formatting of all files with Prettier                 |
@@ -16,6 +17,12 @@ The following commands are available through `npm run`
 | test:watch      | Run tests in 'watch' mode                                      |
 | test:prepublish | Run tests against both v6 and v7 peer dependencies             |
 | validate-types  | Validate types and check that TypeScript compiles successfully |
+
+## Benchmarks
+
+`npm run bench` runs the `*.bench.ts` files in `__benchmarks__` directories. They are not part of `npm test`.
+
+Each scenario prints its median time per call, and the `headline` line is the geometric mean across scenarios. To compare two versions of the code, run the benchmark on each, alternating a few times on the same machine, and divide the median headlines: `before / after - 1` is the improvement.
 
 ## Releasing a new version
 

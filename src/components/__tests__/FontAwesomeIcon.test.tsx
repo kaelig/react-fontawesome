@@ -6,6 +6,8 @@ import { faBacon, faTimes } from '@fortawesome/free-solid-svg-icons'
 import { render, screen } from '@testing-library/react'
 
 import { IS_VERSION_7_OR_LATER } from '../../utils/constants'
+import * as classListModule from '../../utils/get-class-list-from-props'
+import { DEFAULT_ICON_PROPS } from '../__fixtures__/default-icon-props'
 import { faCoffee, faCircle, faSpartan } from '../__fixtures__/icons'
 import { FontAwesomeIcon } from '../FontAwesomeIcon'
 
@@ -654,6 +656,22 @@ describe('FontAwesomeIcon', () => {
       expect(children[1].getAttribute('clip-path')).toEqual(
         'url(#clip-circle-mask)',
       )
+    })
+  })
+
+  describe('default props', () => {
+    const spy = jest.spyOn(classListModule, 'getClassListFromProps')
+
+    afterAll(() => {
+      spy.mockRestore()
+    })
+
+    test('match the fixture that tests and benchmarks use', () => {
+      render(<FontAwesomeIcon icon={faCoffee} />)
+
+      const [props] = spy.mock.calls[0]
+      expect(props).toStrictEqual({ ...DEFAULT_ICON_PROPS, icon: faCoffee })
+      expect(Object.keys(props)).toStrictEqual(Object.keys(DEFAULT_ICON_PROPS))
     })
   })
 
