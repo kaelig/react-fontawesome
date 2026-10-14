@@ -47,9 +47,9 @@ The cost is paid per icon, per render. Output stays identical, so every test pas
 
 Changes that did help in the same pass removed allocations or repeated work without changing how props are read:
 
-- building the custom-prefix `RegExp` once instead of once per class (about 24% on the headline);
-- rewriting the joined class list once instead of each class (about 6%);
-- starting the result array from `className.split(' ')` instead of spreading it into a new array (about 5%, an idea taken from clsx's habit of avoiding intermediate arrays).
+- building the custom-prefix `RegExp` once instead of once per class (about 10% on the headline);
+- rewriting the joined class list once instead of each class (about 7%);
+- starting the result array from `className.split(' ')` instead of spreading it into a new array (about 2%, an idea taken from clsx's habit of avoiding intermediate arrays).
 
 ## Examples
 
