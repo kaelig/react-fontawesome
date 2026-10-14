@@ -20,9 +20,11 @@ const DEFAULT_PREFIX_PATTERN = new RegExp(
   'g',
 )
 
+const getPrefix = () =>
+  config.cssPrefix || config.familyPrefix || DEFAULT_CLASSNAME_PREFIX
+
 export function withPrefix(cls: string): string {
-  const prefix =
-    config.cssPrefix || config.familyPrefix || DEFAULT_CLASSNAME_PREFIX
+  const prefix = getPrefix()
   return prefix === DEFAULT_CLASSNAME_PREFIX
     ? cls
     : cls.replace(DEFAULT_PREFIX_PATTERN, `$1${prefix}-`)
@@ -126,12 +128,9 @@ export function getClassListFromProps(props: FontAwesomeIconProps): string[] {
   if (swing) result.push(ANIMATION_CLASSES.swing)
   if (wag) result.push(ANIMATION_CLASSES.wag)
 
-  const prefix =
-    config.cssPrefix || config.familyPrefix || DEFAULT_CLASSNAME_PREFIX
+  const prefix = getPrefix()
+  if (prefix === DEFAULT_CLASSNAME_PREFIX) return result
 
-  return prefix === DEFAULT_CLASSNAME_PREFIX
-    ? result
-    : // TODO: see if we can achieve custom prefix support without iterating
-      // eslint-disable-next-line unicorn/no-array-callback-reference
-      result.map(withPrefix)
+  const replacement = `$1${prefix}-`
+  return result.map((cls) => cls.replace(DEFAULT_PREFIX_PATTERN, replacement))
 }
