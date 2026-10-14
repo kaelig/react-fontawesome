@@ -335,6 +335,26 @@ describe('get class list', () => {
           : [['fa-spin'], ['fa-spin'], ['fa-spin']],
       )
     })
+
+    test('keeps an empty class list empty', () => {
+      expect(
+        getClassListFromProps(
+          DEFAULT_ICON_PROPS as unknown as FontAwesomeIconProps,
+        ),
+      ).toStrictEqual([])
+    })
+
+    test('keeps empty className tokens in place', () => {
+      expect(
+        getClassListFromProps({
+          className: 'fa-a  b ',
+        } as FontAwesomeIconProps),
+      ).toStrictEqual(
+        IS_VERSION_7_OR_LATER
+          ? ['custom-a', '', 'b', '']
+          : ['fa-a', '', 'b', ''],
+      )
+    })
   })
 
   describe('when using fontawesome-svg-core pre-v7', () => {
