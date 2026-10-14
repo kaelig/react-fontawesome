@@ -659,6 +659,59 @@ describe('FontAwesomeIcon', () => {
     })
   })
 
+  describe('re-rendering', () => {
+    afterEach(() => {
+      fontawesome.config.cssPrefix = 'fa'
+    })
+
+    test('reuses the SVG description when props are unchanged', () => {
+      // Not restored: the `symbol` block below shares this spy, and
+      // clearMocks resets its calls before each test.
+      const spy = jest.spyOn(fontawesome, 'icon')
+
+      const { rerender } = render(<FontAwesomeIcon icon={faCoffee} spin />)
+      rerender(<FontAwesomeIcon icon={faCoffee} spin />)
+      rerender(<FontAwesomeIcon icon={faCoffee} spin />)
+
+      expect(spy).toHaveBeenCalledTimes(1)
+    })
+
+    test('rebuilds the SVG description when a prop it uses changes', () => {
+      const { rerender } = render(<FontAwesomeIcon icon={faCoffee} spin />)
+      rerender(<FontAwesomeIcon icon={faCoffee} pulse />)
+
+      const element = screen.getByRole('img', { hidden: true })
+      expect(element).toHaveClass('fa-pulse')
+      expect(element).not.toHaveClass('fa-spin')
+    })
+
+    test('shows an icon registered with library.add after the first render', () => {
+      const { rerender } = render(<FontAwesomeIcon icon="bacon" />)
+      expect(screen.queryByRole('img', { hidden: true })).toBeNull()
+
+      fontawesome.library.add(faBacon)
+      rerender(<FontAwesomeIcon icon="bacon" />)
+
+      expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+        'data-icon',
+        'bacon',
+      )
+    })
+
+    if (IS_VERSION_7_OR_LATER) {
+      test('picks up a cssPrefix change on the next render', () => {
+        const { rerender } = render(<FontAwesomeIcon icon={faCoffee} spin />)
+
+        fontawesome.config.cssPrefix = 'custom'
+        rerender(<FontAwesomeIcon icon={faCoffee} spin />)
+
+        expect(screen.getByRole('img', { hidden: true })).toHaveClass(
+          'custom-spin',
+        )
+      })
+    }
+  })
+
   describe('default props', () => {
     const spy = jest.spyOn(classListModule, 'getClassListFromProps')
 
