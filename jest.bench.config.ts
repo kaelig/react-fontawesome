@@ -16,6 +16,10 @@ const preset = createDefaultEsmPreset({
 const config: Config = {
   ...preset,
   collectCoverage: false,
+  // Jest's sandbox makes reads of globals such as RegExp and String much
+  // slower than in plain Node, which would inflate code that reads them per
+  // call. Sharing them keeps timings close to an ordinary runtime.
+  sandboxInjectedGlobals: ['RegExp', 'String'],
   testEnvironment: 'node',
   testMatch: ['**/__benchmarks__/**/*.bench.ts'],
 }
